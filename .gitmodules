@@ -1,0 +1,4 @@
+[submodule "external/glfw"]
+    path = external/glfw
+    url = git@github.com:habijung/glfw.git
+    branch = learn-opengl
