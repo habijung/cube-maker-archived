@@ -48,39 +48,22 @@ public:
         const char *vShaderCode = vertexCode.c_str();
         const char *fShaderCode = fragmentCode.c_str();
         unsigned int vertex, fragment;
-        int success;
-        char infoLog[512];
 
         vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, 1, &vShaderCode, NULL);
         glCompileShader(vertex);
-        glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(vertex, sizeof(infoLog), NULL, infoLog);
-            cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n"
-                 << infoLog << endl;
-        }
+        checkCompileErrors(vertex, "VERTEX");
 
         fragment = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragment, 1, &fShaderCode, NULL);
         glCompileShader(fragment);
-        glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(fragment, sizeof(infoLog), NULL, infoLog);
-            cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n"
-                 << infoLog << endl;
-        }
+        checkCompileErrors(fragment, "FRAGMENT");
 
         ID = glCreateProgram();
         glAttachShader(ID, vertex);
         glAttachShader(ID, fragment);
         glLinkProgram(ID);
-        glGetProgramiv(ID, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(ID, sizeof(infoLog), NULL, infoLog);
-            cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
-                 << infoLog << endl;
-        }
+        checkCompileErrors(ID, "PROGRAM");
 
         glDeleteShader(vertex);
         glDeleteShader(fragment);
@@ -101,6 +84,30 @@ public:
     void setFloat(const string &name, float value) const {
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     };
+
+private:
+    void checkCompileErrors(unsigned int shader, string type) {
+        int success;
+        char infoLog[1024];
+
+        if (type != "PROGRAM") {
+            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                glGetShaderInfoLog(shader, sizeof(infoLog), NULL, infoLog);
+                cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n"
+                     << infoLog << "\n -- --------------------------------------------------- -- "
+                     << endl;
+            }
+        } else {
+            glGetProgramiv(shader, GL_LINK_STATUS, &success);
+            if (!success) {
+                glGetProgramInfoLog(shader, sizeof(infoLog), NULL, infoLog);
+                cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n"
+                     << infoLog << "\n -- --------------------------------------------------- -- "
+                     << endl;
+            }
+        }
+    }
 };
 
 #endif//CUBE_MAKER_SHADER_H
