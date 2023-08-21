@@ -19,6 +19,7 @@ include_directories(external/glfw)
 add_executable(
         ${PROJECT_NAME}
         external/glad/src/glad.c
+        main.cpp
 )
 target_link_libraries(
         ${PROJECT_NAME}
