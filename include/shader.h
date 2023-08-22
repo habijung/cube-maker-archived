@@ -6,6 +6,7 @@
 #define CUBE_MAKER_SHADER_H
 
 #include "glad/glad.h"
+#include "glm/glm.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -84,6 +85,9 @@ public:
     void setFloat(const string &name, float value) const {
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
     };
+    void setMat4(const string &name, glm::mat4 &mat) const {
+        glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+    }
 
 private:
     void checkCompileErrors(unsigned int shader, string type) {

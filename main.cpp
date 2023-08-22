@@ -14,6 +14,7 @@
 #include "include/stb_image.h"
 #include <iostream>
 using namespace std;
+using namespace glm;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -115,6 +116,18 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Create transformations
+        mat4 model = mat4(1.0f);
+        mat4 view = mat4(1.0f);
+        mat4 projection = mat4(1.0f);
+        model = rotate(model, radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
+        view = translate(view, vec3(0.0f, 0.0f, -3.0f));
+        projection = perspective(radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        ourShader.setMat4("model", model);
+        ourShader.setMat4("view", view);
+        ourShader.setMat4("projection", projection);
+
+        // Render container
         ourShader.use();
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
