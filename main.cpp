@@ -10,6 +10,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "include/cube.h"
 #include "include/shader.h"
 #include "include/stb_image.h"
 #include <iostream>
@@ -65,9 +66,9 @@ int main() {
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
+    //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // Potision attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
@@ -107,6 +108,9 @@ int main() {
     }
     stbi_image_free(data);
 
+    // Configure global OpenGL state
+    glEnable(GL_DEPTH_TEST);
+
     // Rendering
     while (!glfwWindowShouldClose(window)) {
         // Input
@@ -114,13 +118,13 @@ int main() {
 
         // Rendering somethings
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Create transformations
         mat4 model = mat4(1.0f);
         mat4 view = mat4(1.0f);
         mat4 projection = mat4(1.0f);
-        model = rotate(model, radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
+        model = rotate(model, (float) glfwGetTime() * radians(50.0f), vec3(0.5f, 1.0f, 0.0f));
         view = translate(view, vec3(0.0f, 0.0f, -3.0f));
         projection = perspective(radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
         ourShader.setMat4("model", model);
@@ -131,7 +135,8 @@ int main() {
         ourShader.use();
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        //        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // Check and call events and swap the buffers
         glfwSwapBuffers(window);
