@@ -15,6 +15,10 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/glfw)
 include_directories(external/glfw)
 
+# GLM
+add_subdirectory(external/glm)
+include_directories(external/glm)
+
 # For include directory
 include_directories(include)
 file(COPY include DESTINATION ${CMAKE_BINARY_DIR})
