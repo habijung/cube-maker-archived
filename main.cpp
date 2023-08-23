@@ -41,6 +41,8 @@ float texCoords[] = {
 vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
 vec3 cameraFront = vec3(0.0f, 0.0f, -1.0f);
 vec3 cameraUp = vec3(0.0f, 1.0f, 0.0f);
+float deltaTime = 0.0f;// Time between current and last frame
+float lastFrame = 0.0f;// Time of last frame
 
 int main() {
     glfwInit();
@@ -123,6 +125,11 @@ int main() {
 
     // Rendering
     while (!glfwWindowShouldClose(window)) {
+        // Calculate frame time
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Input
         processInput(window);
 
@@ -168,11 +175,13 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
 }
 
 void processInput(GLFWwindow *window) {
+    // Quit program
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
 
-    const float cameraSpeed = 0.05f;
+    // Camera position
+    float cameraSpeed = static_cast<float>(2.5f * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         cameraPos += cameraSpeed * cameraFront;
     }
