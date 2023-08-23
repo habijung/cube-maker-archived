@@ -19,6 +19,8 @@ using namespace glm;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
+void mouse_callback(GLFWwindow *window, double px, double py);
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
 float vertices[] = {
         // positions      // texture
@@ -41,6 +43,14 @@ float texCoords[] = {
 vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
 vec3 cameraFront = vec3(0.0f, 0.0f, -1.0f);
 vec3 cameraUp = vec3(0.0f, 1.0f, 0.0f);
+
+float lastX = 400;
+float lastY = 300;
+float _yaw = -90.0f;
+float _pitch = 0.0f;
+float fov = 45.0f;
+bool firstMouse = true;
+
 float deltaTime = 0.0f;// Time between current and last frame
 float lastFrame = 0.0f;// Time of last frame
 
@@ -58,6 +68,8 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         cout << "Failed to initialize GLAD" << endl;
@@ -117,10 +129,11 @@ int main() {
 
     // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Projection matrix rarely changes there's no need to do this per frame
     ourShader.use();
-    mat projection = perspective(radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    mat projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
     ourShader.setMat4("projection", projection);
 
     // Rendering
@@ -193,5 +206,50 @@ void processInput(GLFWwindow *window) {
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
         cameraPos += normalize(cross(cameraFront, cameraUp)) * cameraSpeed;
+    }
+}
+
+void mouse_callback(GLFWwindow *window, double px, double py) {
+    float xpos = static_cast<float>(px);
+    float ypos = static_cast<float>(py);
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;// reversed since y-coordinates range from bottom to top
+    lastX = xpos;
+    lastY = ypos;
+
+    const float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+    _yaw += xoffset;
+    _pitch += yoffset;
+
+    if (_pitch > 89.0f) {
+        _pitch = 89.0f;
+    }
+    if (_pitch < -89.0f) {
+        _pitch = -89.0f;
+    }
+
+    vec3 direction;
+    direction.x = cos(radians(_yaw)) * cos(radians(_pitch));
+    direction.y = sin(radians(_pitch));
+    direction.z = sin(radians(_yaw)) * cos(radians(_pitch));
+    cameraFront = normalize(direction);
+}
+
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+    fov -= (float) yoffset;// Field of View (or Angle of View)
+    if (fov < 1.0f) {
+        fov = 1.0f;
+    }
+    if (fov > 45.0f) {
+        fov = 45.0f;
     }
 }
