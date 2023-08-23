@@ -111,6 +111,11 @@ int main() {
     // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
 
+    // Projection matrix rarely changes there's no need to do this per frame
+    ourShader.use();
+    mat projection = perspective(radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    ourShader.setMat4("projection", projection);
+
     // Rendering
     while (!glfwWindowShouldClose(window)) {
         // Input
@@ -120,22 +125,35 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Create transformations
-        mat4 model = mat4(1.0f);
-        mat4 view = mat4(1.0f);
-        mat4 projection = mat4(1.0f);
-        model = rotate(model, (float) glfwGetTime() * radians(50.0f), vec3(0.5f, 1.0f, 0.0f));
-        view = translate(view, vec3(0.0f, 0.0f, -3.0f));
-        projection = perspective(radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-        ourShader.setMat4("model", model);
-        ourShader.setMat4("view", view);
-        ourShader.setMat4("projection", projection);
+        // Create camera
+        vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
+        vec3 cameraTarget = vec3(0.0f, 0.0f, 0.0f);
+        vec3 cameraDirection = normalize(cameraPos - cameraTarget);
+        vec3 up = vec3(0.0f, 1.0f, 0.0f);
+        vec3 cameraRight = normalize(cross(up, cameraDirection));
+        vec3 cameraUp = cross(cameraDirection, cameraRight);
 
         // Render container
         ourShader.use();
         glBindTexture(GL_TEXTURE_2D, texture);
         glBindVertexArray(VAO);
-        //        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        // Camera, View transformation
+        mat4 view = mat4(1.0f);
+        const float radius = 10.0f;
+        float camX = static_cast<float>(sin(glfwGetTime()) * radius);
+        float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
+        view = lookAt(glm::vec3(camX, 0.0, camZ),
+                      glm::vec3(0.0, 0.0, 0.0),
+                      glm::vec3(0.0, 1.0, 0.0));
+        ourShader.setMat4("view", view);
+
+        mat4 model = mat4(1.0f);
+        float angle = 20.0f;
+        model = translate(model, vec3(0.0f, 0.0f, 0.0f));
+        model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
+        ourShader.setMat4("model", model);
+
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // Check and call events and swap the buffers
