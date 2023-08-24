@@ -10,7 +10,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "include/cube.h"
+#include "include/objects.h"
 #include "include/shader.h"
 #include "include/stb_image.h"
 #include <iostream>
@@ -21,23 +21,6 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double px, double py);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-
-float vertices[] = {
-        // positions      // texture
-        0.5f, 0.5f, 0.0f, 1.0f, 1.0f,  // top right
-        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,// bottom left
-        -0.5f, 0.5f, 0.0f, 0.0f, 1.0f  // top left
-};
-unsigned int indices[] = {
-        0, 1, 3,// first triangle
-        1, 2, 3 // second triangle
-};
-float texCoords[] = {
-        0.0f, 0.0f,// lower-left corner
-        1.0f, 0.0f,// lower-right corner
-        0.5f, 1.0f // top-center corner
-};
 
 // Create camera
 vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
@@ -76,25 +59,36 @@ int main() {
         return -1;
     }
 
-    unsigned int VBO;
-    unsigned int VAO;
-    unsigned int EBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    // Object: Plane
+    unsigned int planeVAO, planeVBO, planeEBO;
+    glGenVertexArrays(1, &planeVAO);
+    glGenBuffers(1, &planeVBO);
+    glGenBuffers(1, &planeEBO);
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
-    //    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    //    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBindVertexArray(planeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, planeEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(planeIndices), planeIndices, GL_STATIC_DRAW);
 
-    // Potision attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(0);
-    // Texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
+
+    // Object: Cube
+    unsigned int cubeVAO, cubeVBO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &cubeVBO);
+
+    glBindVertexArray(cubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
 
     // Shader
     const char *vert = "include/shader.vert";
@@ -152,20 +146,27 @@ int main() {
 
         // Render container
         ourShader.use();
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(VAO);
 
         // Camera, View transformation
         mat4 view = mat4(1.0f);
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         ourShader.setMat4("view", view);
 
+        // Draw object: Plane
+        glBindVertexArray(planeVAO);
+        glBindTexture(GL_TEXTURE_2D, texture);
         mat4 model = mat4(1.0f);
-        float angle = 20.0f;
-        model = translate(model, vec3(0.0f, 0.0f, 0.0f));
-        model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
+        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
         ourShader.setMat4("model", model);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        // Draw object: Cube
+        glBindVertexArray(cubeVAO);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        model = mat4(1.0f);
+        model = translate(model, vec3(1.0f, 0.0f, 0.0f));
+        // model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
+        ourShader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // Check and call events and swap the buffers
@@ -174,9 +175,11 @@ int main() {
     }
 
     // Optional
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    glDeleteVertexArrays(1, &planeVAO);
+    glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteBuffers(1, &planeVBO);
+    glDeleteBuffers(1, &cubeVBO);
+    glDeleteBuffers(1, &planeEBO);
 
     glfwTerminate();
     return 0;
