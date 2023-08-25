@@ -21,6 +21,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double px, double py);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+unsigned int load_texture(const char *img);
 
 // Create camera
 vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
@@ -67,6 +68,10 @@ int main() {
     Shader shaderWall("include/wall.vert", "include/wall.frag");
     Shader shaderWood("include/wood.vert", "include/wood.frag");
 
+    // Texture
+    unsigned int textureWall = load_texture("include/wall.jpg");
+    unsigned int textureWood = load_texture("include/wood.jpg");
+
     // Object: Plane
     unsigned int planeVAO, planeVBO, planeEBO;
     glGenVertexArrays(1, &planeVAO);
@@ -101,55 +106,10 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // Texture
-    unsigned int wallTexture;
-    glGenTextures(1, &wallTexture);
-    glBindTexture(GL_TEXTURE_2D, wallTexture);
-
-    // Set the texture wrapping/filtering options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    int width, height, nrChannels;
-    const char *img = "include/wall.jpg";
-    unsigned char *data = stbi_load(img, &width, &height, &nrChannels, 0);
-
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        cout << "Failed to load texture" << endl;
-    }
-    stbi_image_free(data);
-
-    unsigned int woodTexture;
-    glGenTextures(1, &woodTexture);
-    glBindTexture(GL_TEXTURE_2D, woodTexture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    const char *img2 = "include/wood.jpg";
-    data = stbi_load(img2, &width, &height, &nrChannels, 0);
-    if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    } else {
-        cout << "Failed to load texture" << endl;
-    }
-    stbi_image_free(data);
-
     shaderWall.use();
     shaderWall.setInt("textureWall", 0);
     shaderWood.use();
     shaderWood.setInt("textureWood", 0);
-
-    // Projection matrix rarely changes there's no need to do this per frame
-
 
     // Rendering
     while (!glfwWindowShouldClose(window)) {
@@ -177,7 +137,7 @@ int main() {
 
         // Draw object: Plane
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, wallTexture);
+        glBindTexture(GL_TEXTURE_2D, textureWall);
 
         glBindVertexArray(planeVAO);
         mat4 model = mat4(1.0f);
@@ -187,7 +147,7 @@ int main() {
 
         // Draw object: Cube
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, woodTexture);
+        glBindTexture(GL_TEXTURE_2D, textureWood);
 
         glBindVertexArray(cubeVAO);
         model = mat4(1.0f);
@@ -285,4 +245,30 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     if (fov > 45.0f) {
         fov = 45.0f;
     }
+}
+
+unsigned int load_texture(const char *img) {
+    unsigned int tex;
+    glGenTextures(1, &tex);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(img, &width, &height, &nrChannels, 0);
+
+    if (data) {
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        // Set the texture wrapping/filtering options
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    } else {
+        cout << "Failed to load texture" << endl;
+    }
+
+    return tex;
 }
