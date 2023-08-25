@@ -59,6 +59,14 @@ int main() {
         return -1;
     }
 
+    // Configure global OpenGL state
+    glEnable(GL_DEPTH_TEST);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // Shader
+    Shader shaderWall("include/wall.vert", "include/wall.frag");
+    Shader shaderWood("include/wood.vert", "include/wood.frag");
+
     // Object: Plane
     unsigned int planeVAO, planeVBO, planeEBO;
     glGenVertexArrays(1, &planeVAO);
@@ -90,18 +98,13 @@ int main() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
 
-    // Shader
-    const char *vert = "include/shader.vert";
-    const char *frag = "include/shader.frag";
-    Shader ourShader(vert, frag);
-
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     // Texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    unsigned int wallTexture;
+    glGenTextures(1, &wallTexture);
+    glBindTexture(GL_TEXTURE_2D, wallTexture);
 
     // Set the texture wrapping/filtering options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -121,14 +124,32 @@ int main() {
     }
     stbi_image_free(data);
 
-    // Configure global OpenGL state
-    glEnable(GL_DEPTH_TEST);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    unsigned int woodTexture;
+    glGenTextures(1, &woodTexture);
+    glBindTexture(GL_TEXTURE_2D, woodTexture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    const char *img2 = "include/wood.jpg";
+    data = stbi_load(img2, &width, &height, &nrChannels, 0);
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    } else {
+        cout << "Failed to load texture" << endl;
+    }
+    stbi_image_free(data);
+
+    shaderWall.use();
+    shaderWall.setInt("textureWall", 0);
+    shaderWood.use();
+    shaderWood.setInt("textureWood", 0);
 
     // Projection matrix rarely changes there's no need to do this per frame
-    ourShader.use();
-    mat projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
-    ourShader.setMat4("projection", projection);
+
 
     // Rendering
     while (!glfwWindowShouldClose(window)) {
@@ -145,28 +166,37 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Render container
-        ourShader.use();
+        shaderWall.use();
 
         // Camera, View transformation
         mat4 view = mat4(1.0f);
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        ourShader.setMat4("view", view);
+        shaderWall.setMat4("view", view);
+        mat projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
+        shaderWall.setMat4("projection", projection);
 
         // Draw object: Plane
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, wallTexture);
+
         glBindVertexArray(planeVAO);
-        glBindTexture(GL_TEXTURE_2D, texture);
         mat4 model = mat4(1.0f);
         model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
-        ourShader.setMat4("model", model);
+        shaderWall.setMat4("model", model);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // Draw object: Cube
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, woodTexture);
+
         glBindVertexArray(cubeVAO);
-        glBindTexture(GL_TEXTURE_2D, texture);
         model = mat4(1.0f);
         model = translate(model, vec3(1.0f, 0.0f, 0.0f));
         // model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
-        ourShader.setMat4("model", model);
+        shaderWood.use();
+        shaderWood.setMat4("view", view);
+        shaderWood.setMat4("projection", projection);
+        shaderWood.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // Check and call events and swap the buffers
