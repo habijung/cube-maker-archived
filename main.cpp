@@ -62,11 +62,16 @@ int main() {
 
     // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);// 여기에서 사용하는 이유를 정확히 모르겠음
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Shader
+    // TODO: 어디에 사용되는 shader인지 바로 알기 위해 shader 변수 이름을 object 이름으로 변경하기
     Shader shaderWall("include/wall.vert", "include/wall.frag");
     Shader shaderWood("include/wood.vert", "include/wood.frag");
+    Shader shaderOutline("include/wood.vert", "include/outline.frag");
 
     // Texture
     unsigned int textureWall = load_texture("include/wall.jpg");
@@ -123,41 +128,72 @@ int main() {
 
         // Rendering somethings
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-        // Render container
-        shaderWall.use();
-
+        // Object: Plane
         // Camera, View transformation
-        mat4 view = mat4(1.0f);
+        mat4 view, model, projection = mat4(1.0f);
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
+
+        shaderWall.use();
         shaderWall.setMat4("view", view);
-        mat projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
         shaderWall.setMat4("projection", projection);
 
-        // Draw object: Plane
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureWall);
+        // Set stencil options
+        glStencilMask(0x00);// Stencil Buffer에 plane을 그리지 않기 위해 0으로 mask bit를 설정
 
+        // Draw
         glBindVertexArray(planeVAO);
-        mat4 model = mat4(1.0f);
+        glBindTexture(GL_TEXTURE_2D, textureWall);// Default texture: GL_TEXTURE0
+        model = mat4(1.0f);
         model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
         shaderWall.setMat4("model", model);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
 
-        // Draw object: Cube
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureWood);
-
-        glBindVertexArray(cubeVAO);
-        model = mat4(1.0f);
-        model = translate(model, vec3(1.0f, 0.0f, 0.0f));
-        // model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
+        // Object: Cube
         shaderWood.use();
         shaderWood.setMat4("view", view);
         shaderWood.setMat4("projection", projection);
+
+        // Set stencil options
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);// 그리고 싶은 부분은 1로 mask bit 설정
+
+        // Draw
+        glBindVertexArray(cubeVAO);
+        glBindTexture(GL_TEXTURE_2D, textureWood);
+        model = mat4(1.0f);
+        model = translate(model, vec3(1.0f, 0.0f, 0.0f));
+        // model = rotate(model, radians(angle), vec3(1.0f, 0.3f, 0.5f));
         shaderWood.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        // Object: Cube Outline
+        shaderOutline.use();
+        shaderOutline.setMat4("view", view);
+        shaderOutline.setMat4("projection", projection);
+
+        // Set stencil options
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+
+        // Draw
+        glBindVertexArray(cubeVAO);
+        model = mat4(1.0f);
+        model = translate(model, vec3(1.0f, 0.0f, 0.0f));
+        model = scale(model, vec3(1.03f));
+        shaderOutline.setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        // End stencil testing
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glEnable(GL_DEPTH_TEST);
 
         // Check and call events and swap the buffers
         glfwSwapBuffers(window);
