@@ -35,7 +35,7 @@ float _yaw = -90.0f;
 float _pitch = 0.0f;
 float fov = 45.0f;
 bool firstMouse = true;
-bool cursorMode = true;
+bool showCursor = true;
 
 float deltaTime = 0.0f;// Time between current and last frame
 float lastFrame = 0.0f;// Time of last frame
@@ -259,8 +259,12 @@ void mouse_callback(GLFWwindow *window, double px, double py) {
     const float sensitivity = 0.1f;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
-    _yaw += xoffset;
-    _pitch += yoffset;
+
+    // Mouse cursor off이면 _yaw, _pitch를 고정시켜서 화면을 움직이게 하지 않음.
+    if (!showCursor) {
+        _yaw += xoffset;
+        _pitch += yoffset;
+    }
 
     if (_pitch > 89.0f) {
         _pitch = 89.0f;
@@ -315,11 +319,11 @@ unsigned int load_texture(const char *img) {
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     // Mouse cursor mode
     if (key == GLFW_KEY_R && action == GLFW_PRESS) {
-        if (cursorMode) {
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        } else {
+        if (showCursor) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
-        cursorMode ^= 1;
+        showCursor ^= 1;
     }
 }
