@@ -29,8 +29,12 @@ vec3 cameraPos = vec3(0.0f, 0.0f, 3.0f);
 vec3 cameraFront = vec3(0.0f, 0.0f, -1.0f);
 vec3 cameraUp = vec3(0.0f, 1.0f, 0.0f);
 
-float lastX = 400;
-float lastY = 300;
+const unsigned int SCR_WIDTH = 1024;
+const unsigned int SCR_HEIGHT = 768;
+const float SCR_RATE = (float) SCR_WIDTH / (float) SCR_HEIGHT;
+
+float lastX = SCR_WIDTH / 2.0;
+float lastY = SCR_HEIGHT / 2.0;
 float _yaw = -90.0f;
 float _pitch = 0.0f;
 float fov = 45.0f;
@@ -46,7 +50,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(800, 600, "Cube Maker", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Cube Maker", NULL, NULL);
     if (window == NULL) {
         cout << "Failed to create GLFW window" << endl;
         glfwTerminate();
@@ -137,7 +141,7 @@ int main() {
         // Camera, View transformation
         mat4 view, model, projection = mat4(1.0f);
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        projection = perspective(radians(fov), 800.0f / 600.0f, 0.1f, 100.0f);
+        projection = perspective(radians(fov), SCR_RATE, 0.1f, 100.0f);
 
         shaderWall.use();
         shaderWall.setMat4("view", view);
@@ -322,6 +326,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         if (showCursor) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         } else {
+            glfwSetCursorPos(window, SCR_WIDTH / 2.0, SCR_HEIGHT / 2.0);
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
         showCursor ^= 1;
