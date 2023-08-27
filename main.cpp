@@ -21,6 +21,7 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_callback(GLFWwindow *window, double px, double py);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 unsigned int load_texture(const char *img);
 
 // Create camera
@@ -34,6 +35,7 @@ float _yaw = -90.0f;
 float _pitch = 0.0f;
 float fov = 45.0f;
 bool firstMouse = true;
+bool cursorMode = true;
 
 float deltaTime = 0.0f;// Time between current and last frame
 float lastFrame = 0.0f;// Time of last frame
@@ -54,6 +56,7 @@ int main() {
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, key_callback);
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         cout << "Failed to initialize GLAD" << endl;
@@ -65,7 +68,7 @@ int main() {
     glEnable(GL_STENCIL_TEST);
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);// 여기에서 사용하는 이유를 정확히 모르겠음
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
     // Shader
     // TODO: 어디에 사용되는 shader인지 바로 알기 위해 shader 변수 이름을 object 이름으로 변경하기
@@ -307,4 +310,16 @@ unsigned int load_texture(const char *img) {
     }
 
     return tex;
+}
+
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    // Mouse cursor mode
+    if (key == GLFW_KEY_R && action == GLFW_PRESS) {
+        if (cursorMode) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+        cursorMode ^= 1;
+    }
 }
