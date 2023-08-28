@@ -72,14 +72,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Shader
-    // TODO: 어디에 사용되는 shader인지 바로 알기 위해 shader 변수 이름을 object 이름으로 변경하기
-    Shader shaderWall("include/wall.vert", "include/wall.frag");
-    Shader shaderWood("include/wood.vert", "include/wood.frag");
-    Shader shaderOutline("include/wood.vert", "include/outline.frag");
-
-    // Texture
-    unsigned int textureWall = load_texture("include/wall.jpg");
-    unsigned int textureWood = load_texture("include/wood.jpg");
+    Shader planeShader("include/plane.vert", "include/plane.frag");
 
     // Object: Plane
     unsigned int planeVAO, planeVBO, planeEBO;
@@ -97,9 +90,6 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) 0);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *) (3 * sizeof(float)));
-
-    shaderWall.use();
-    shaderWall.setInt("textureWall", 0);
 
     // Rendering
     while (!glfwWindowShouldClose(window)) {
@@ -121,16 +111,15 @@ int main() {
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = perspective(radians(fov), SCR_RATE, 0.1f, 100.0f);
 
-        shaderWall.use();
-        shaderWall.setMat4("view", view);
-        shaderWall.setMat4("projection", projection);
+        planeShader.use();
+        planeShader.setMat4("view", view);
+        planeShader.setMat4("projection", projection);
 
         // Draw
         glBindVertexArray(planeVAO);
-        glBindTexture(GL_TEXTURE_2D, textureWall);// Default texture: GL_TEXTURE0
         model = mat4(1.0f);
         model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
-        shaderWall.setMat4("model", model);
+        planeShader.setMat4("model", model);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
