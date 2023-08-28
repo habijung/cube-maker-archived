@@ -112,29 +112,21 @@ int main() {
         projection = perspective(radians(fov), SCR_RATE, 0.1f, 100.0f);
 
         // Object: Outline
-        model = mat4(1.0f);
-        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
-
         outlineShader.use();
         outlineShader.setMat4("view", view);
         outlineShader.setMat4("projection", projection);
-        outlineShader.setMat4("model", model);
 
         glBindVertexArray(planeVAO);
-        glDrawElements(GL_LINE_LOOP, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
 
-        // Object: Plane
-        model = mat4(1.0f);
-        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 2; j++) {
+                model = mat4(1.0f);
+                model = translate(model, vec3((float) i, (float) j, 0.0f));
+                outlineShader.setMat4("model", model);
+                glDrawElements(GL_LINE_LOOP, 6, GL_UNSIGNED_INT, 0);
+            }
+        }
 
-        planeShader.use();
-        planeShader.setMat4("view", view);
-        planeShader.setMat4("projection", projection);
-        planeShader.setMat4("model", model);
-
-        glBindVertexArray(planeVAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // Check and call events and swap the buffers
