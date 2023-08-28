@@ -73,6 +73,7 @@ int main() {
 
     // Shader
     Shader planeShader("include/plane.vert", "include/plane.frag");
+    Shader outlineShader("include/plane.vert", "include/plane-outline.frag");
 
     // Object: Plane
     unsigned int planeVAO, planeVBO, planeEBO;
@@ -105,21 +106,34 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Object: Plane
         // Camera, View transformation
         mat4 view, model, projection = mat4(1.0f);
         view = lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = perspective(radians(fov), SCR_RATE, 0.1f, 100.0f);
 
+        // Object: Outline
+        model = mat4(1.0f);
+        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
+
+        outlineShader.use();
+        outlineShader.setMat4("view", view);
+        outlineShader.setMat4("projection", projection);
+        outlineShader.setMat4("model", model);
+
+        glBindVertexArray(planeVAO);
+        glDrawElements(GL_LINE_LOOP, 6, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+
+        // Object: Plane
+        model = mat4(1.0f);
+        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
+
         planeShader.use();
         planeShader.setMat4("view", view);
         planeShader.setMat4("projection", projection);
-
-        // Draw
-        glBindVertexArray(planeVAO);
-        model = mat4(1.0f);
-        model = translate(model, vec3(-1.5f, 0.0f, 0.0f));
         planeShader.setMat4("model", model);
+
+        glBindVertexArray(planeVAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
